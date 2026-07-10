@@ -1,4 +1,5 @@
 FROM node:24.18.0
+ARG WORKDIR
 WORKDIR ${WORKDIR}
 
 # Install dependencies as a separate step to take advantage of Docker's
