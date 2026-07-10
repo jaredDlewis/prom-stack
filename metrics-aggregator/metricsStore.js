@@ -10,25 +10,30 @@ class MetricsStore {
     this.containerMemoryUsages = [];
   }
 
-  getAllContainerMemoryUsage() {
+  getContainerMemoryUsages() {
     return this.containerMemoryUsages;
   }
 
   getContainerMemoryUsage(id) {
-    return this.containerMemoryUsages.find(container => container.id === id);
+    return this.containerMemoryUsages.find((container) => container.id === id);
   }
 
-  setContainerMemoryUsage(id, memoryUsage) {
-    const container = getContainerMemoryUsage(id);
+  upsertContainerMemoryUsage({ id, memoryUsage }) {
+    const container = this.getContainerMemoryUsage(id);
     if (container) {
       container.memoryUsage = memoryUsage;
+    } else {
+      this.containerMemoryUsages.push({ id, memoryUsage });
     }
   }
 
-  upsertMemoryUsages() {
-
+  upsertContainerMemoryUsages(containerMemoryUsages) {
+    for (const container of containerMemoryUsages) {
+      this.setContainerMemoryUsage(container);
+    }
   }
-
 }
 
-export const metricsStore = new MetricsStore;
+// singleton to hold state
+const metricsStore = new MetricsStore();
+export default metricsStore;
