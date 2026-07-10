@@ -1,4 +1,5 @@
 import path from 'path';
+import { argv } from 'process';
 // gRPC and Proto Loader modules
 import grpc from '@grpc/grpc-js';
 import protoLoader from '@grpc/proto-loader';
@@ -51,20 +52,44 @@ function extractIdAndMemoryUsage(call) {
 }
 
 // Function to start and configure the gRPC server
-function getServer() {
+function getGrpcServer() {
   const server = new grpc.Server();
 
   // Add the MetricsService service with the Export method implementation
   server.addService(MetricsService.service, {
     // Implementation of the Export RPC method
-    Export: (call, callback) => {
-      console.log('Received request:');
-      // get and store memory usage from sibling container
-      const containerMemoryUsage = extractIdAndMemoryUsage(call);
-      metricsStore.upsertContainerMemoryUsage(containerMemoryUsage);
-      console.log(metricsStore.getContainerMemoryUsages());
-      // get memory usage from nested container(s)
-      console.log('\n');
+    Export: async (call, callback) => {
+      console.log('gRPC server received MetricsService/Export call');
+      try {
+        // get and store memory usage from sibling container
+        const containerMemoryUsage = extractIdAndMemoryUsage(call);
+        metricsStore.upsertContainerMemoryUsage(containerMemoryUsage);
+        console.log(
+          'Successfully set data from sibling container',
+          containerMemoryUsage,
+        );
+      } catch (error) {
+        console.log(`Didn't get sibling container memory usage data: `, error);
+      }
+      // try to get and store memory usage from nested container(s)
+      try {
+        const nestedContainerResponse = await fetch(
+          `http://${NESTED_CONTAINER_NAME}:3000/memory`,
+        );
+        const nestedContainerBody = await nestedContainerResponse.json();
+        const nestedContainerMemoryUsages = nestedContainerBody.data;
+        metricsStore.upsertContainerMemoryUsages(nestedContainerMemoryUsages);
+        console.log(
+          'Successfully set data from nested container:',
+          nestedContainerMemoryUsages,
+        );
+      } catch (error) {
+        console.log("Didn't get nested memory usage data: ", error);
+      }
+      console.log(
+        'Store after update:',
+        metricsStore.getContainerMemoryUsages(),
+      );
       callback(null, {});
     },
   });
@@ -72,17 +97,22 @@ function getServer() {
   return server;
 }
 
-// Create the server
-const metricsServer = getServer();
-metricsServer.bindAsync(
-  '0.0.0.0:4317',
-  grpc.ServerCredentials.createInsecure(),
-  (error, port) => {
-    if (error) {
-      console.error(error);
-      return;
-    }
+export function startGrpcServer() {
+  const metricsServer = getGrpcServer();
+  metricsServer.bindAsync(
+    '0.0.0.0:4317',
+    grpc.ServerCredentials.createInsecure(),
+    (error, port) => {
+      if (error) {
+        console.error(error);
+        return;
+      }
 
-    console.log(`Server running on port ${port}`);
-  },
-);
+      console.log(`gRPC server running on port ${port}`);
+    },
+  );
+}
+
+if (import.meta.filename === argv[1]) {
+  startGrpcServer();
+}

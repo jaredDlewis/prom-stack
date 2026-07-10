@@ -1,10 +1,26 @@
-import http from 'node:http';
+import http from 'http';
+import { argv } from 'process';
+import metricsStore from './metricsStore.js';
 
-const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({
-    data: 'Hello World!',
-  }));
+export const httpServer = http.createServer((req, res) => {
+  if (req.method === 'GET' && req.url === '/memory')
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+  console.log('http server received GET /memory request');
+  const containerMemoryUsages = metricsStore.getContainerMemoryUsages()
+  console.log('Response data:', containerMemoryUsages)
+  res.end(
+    JSON.stringify({
+      data: containerMemoryUsages,
+    }),
+  );
 });
 
-server.listen(3000);
+export function startHttpServer() {
+  httpServer.listen(3000, () =>
+    console.log('http server running on port 3000'),
+  );
+}
+
+if (import.meta.filename === argv[1]) {
+  startHttpServer();
+}

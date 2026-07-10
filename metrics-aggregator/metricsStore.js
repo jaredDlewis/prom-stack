@@ -29,7 +29,7 @@ class MetricsStore {
 
   upsertContainerMemoryUsages(containerMemoryUsages) {
     for (const container of containerMemoryUsages) {
-      this.setContainerMemoryUsage(container);
+      this.upsertContainerMemoryUsage(container);
     }
   }
 }

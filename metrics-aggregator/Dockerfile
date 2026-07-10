@@ -15,4 +15,4 @@ COPY . .
 
 EXPOSE 4317 3000
 
-CMD ["node", "grpcServer.js"]
+CMD ["npm", "run", "start"]
