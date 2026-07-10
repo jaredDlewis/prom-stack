@@ -62,8 +62,8 @@ function getServer() {
       // get and store memory usage from sibling container
       const containerMemoryUsage = extractIdAndMemoryUsage(call);
       metricsStore.upsertContainerMemoryUsage(containerMemoryUsage);
-      // get memory usage from nested container(s)
       console.log(metricsStore.getContainerMemoryUsages());
+      // get memory usage from nested container(s)
       console.log('\n');
       callback(null, {});
     },
