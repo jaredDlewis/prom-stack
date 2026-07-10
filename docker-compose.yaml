@@ -1,0 +1,33 @@
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    user: "0:0" # Run as root to guarantee socket access permissions
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol/config.yaml
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: ["--config=/etc/otelcol/config.yaml"]
+    depends_on:
+      - metrics-aggregator
+
+  dind:
+    image: docker:dind
+    container_name: ${NESTED_CONTAINER_NAME}
+    privileged: true
+    volumes:
+      - .:${WORKDIR}
+    command: []
+
+
+  metrics-aggregator:
+    container_name: metrics-aggregator
+    build:
+      context: ./metrics-aggregator
+    image: metrics-aggregator
+    environment:
+      - NESTED_CONTAINER_NAME=${NESTED_CONTAINER_NAME}
+
+    
+
+
+  
