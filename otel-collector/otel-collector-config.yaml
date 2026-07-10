@@ -1,8 +1,8 @@
 receivers:
   docker_stats:
     endpoint: "unix:///var/run/docker.sock"
-    collection_interval: 15s
-    initial_delay: 5s
+    collection_interval: 2s
+    initial_delay: 2s
     excluded_images:
       - metrics-aggregator
       - moby/buildkit:buildx-stable-1

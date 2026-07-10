@@ -26,10 +26,10 @@ const protoDescriptor = grpc.loadPackageDefinition(packageDefinition);
 const MetricsService =
   protoDescriptor.opentelemetry.proto.collector.metrics.v1.MetricsService;
 
-function extractIdAndMemoryUsage(call) {
+function extractIdAndMetrics(call) {
   const request = call.request;
 
-  // Find the metrics with associated with the nested container
+  // Find the metrics associated with the nested container
   const nestedResourceMetrics = request.resource_metrics.find((rm) => {
     const containerNameAttr = rm.resource.attributes.find(
       (attr) => attr.key === 'container.name',
@@ -41,14 +41,14 @@ function extractIdAndMemoryUsage(call) {
     (attr) => attr.key === 'container.id',
   );
   const id = containerIdAttr.value.string_value;
-  // Get container usage metric total
-  const memoryUsageMetrics =
-    nestedResourceMetrics?.scope_metrics[0].metrics.find(
-      (metric) => metric.name === 'container.memory.usage.total',
-    );
-  const memoryUsage = memoryUsageMetrics.sum.data_points[0].as_int;
 
-  return { id, memoryUsage };
+  // Get all container metrics
+  const consolidatedMetrics = {};
+  for (const metric of nestedResourceMetrics?.scope_metrics[0].metrics) {
+    consolidatedMetrics[metric.name] = metric[metric.data].data_points
+  }
+
+  return { id, metrics: consolidatedMetrics };
 }
 
 // Function to start and configure the gRPC server
@@ -61,34 +61,34 @@ function getGrpcServer() {
     Export: async (call, callback) => {
       console.log('gRPC server received MetricsService/Export call');
       try {
-        // get and store memory usage from sibling container
-        const containerMemoryUsage = extractIdAndMemoryUsage(call);
-        metricsStore.upsertContainerMemoryUsage(containerMemoryUsage);
+        // get and store metrics from sibling container
+        const containerMetrics = extractIdAndMetrics(call);
+        metricsStore.upsertOneContainerMetrics(containerMetrics);
         console.log(
           'Successfully set data from sibling container',
-          containerMemoryUsage,
+          containerMetrics,
         );
       } catch (error) {
-        console.log(`Didn't get sibling container memory usage data: `, error);
+        console.log(`Didn't get sibling container metrics: `, error);
       }
-      // try to get and store memory usage from nested container(s)
+      // try to get and store metrics from nested container(s)
       try {
         const nestedContainerResponse = await fetch(
-          `http://${NESTED_CONTAINER_NAME}:3000/memory`,
+          `http://${NESTED_CONTAINER_NAME}:3000/metrics`,
         );
         const nestedContainerBody = await nestedContainerResponse.json();
-        const nestedContainerMemoryUsages = nestedContainerBody.data;
-        metricsStore.upsertContainerMemoryUsages(nestedContainerMemoryUsages);
+        const nestedContainerMetrics = nestedContainerBody.data;
+        metricsStore.upsertAllContainerMetrics(nestedContainerMetrics);
         console.log(
           'Successfully set data from nested container:',
-          nestedContainerMemoryUsages,
+          nestedContainerMetrics,
         );
       } catch (error) {
-        console.log("Didn't get nested memory usage data: ", error);
+        console.log("Didn't get nested container(s) metrics: ", error);
       }
       console.log(
         'Store after update:',
-        metricsStore.getContainerMemoryUsages(),
+        metricsStore.getAllContainerMetrics(),
       );
       callback(null, {});
     },

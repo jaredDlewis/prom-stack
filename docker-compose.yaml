@@ -1,31 +1,54 @@
+name: telemetry-scratch
+
 services:
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
+    image: otel-collector
     container_name: otel-collector
     user: "0:0" # Run as root to guarantee socket access permissions
+    build:
+      context: ./otel-collector
     volumes:
-      - ./otel-collector-config.yaml:/etc/otelcol/config.yaml
       - /var/run/docker.sock:/var/run/docker.sock
     command: ["--config=/etc/otelcol/config.yaml"]
     depends_on:
       - metrics-aggregator
+      - dind-daemon
 
-  dind:
+  dind-daemon:
     image: docker:dind
     container_name: ${NESTED_CONTAINER_NAME}
     privileged: true
-    volumes:
-      - .:${WORKDIR}
-    command: []
+    environment:
+      # Disables TLS so the client can connect over plain TCP (use only in secure/local environments)
+      - DOCKER_TLS_CERTDIR=
+    restart: unless-stopped
+    command: ["--tls=false"]
 
+  docker-client:
+    image: docker-client
+    container_name: docker-client
+    depends_on:
+      - dind-daemon
+    environment:
+      # Tells the Docker CLI to send commands to the sidecar daemon instead of looking locally
+      - DOCKER_HOST=tcp://dind-daemon:2375
+    build:
+      context: .
+      args:
+        WORKDIR: ${WORKDIR}
+    
 
   metrics-aggregator:
     container_name: metrics-aggregator
     build:
       context: ./metrics-aggregator
+      args:
+        WORKDIR: ${WORKDIR}
     image: metrics-aggregator
     environment:
       - NESTED_CONTAINER_NAME=${NESTED_CONTAINER_NAME}
+    ports:
+      - 3000:3000
 
     
 

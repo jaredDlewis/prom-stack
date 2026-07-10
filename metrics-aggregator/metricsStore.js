@@ -1,35 +1,37 @@
 /*
 {
   id: hash (string)
-  memoryUsage: bytes (string)
+  metrics: {
+    [metric-name]: metric-data-points
+  }
 }
 */
 
 class MetricsStore {
   constructor() {
-    this.containerMemoryUsages = [];
+    this.containerMetrics = [];
   }
 
-  getContainerMemoryUsages() {
-    return this.containerMemoryUsages;
+  getAllContainerMetrics() {
+    return this.containerMetrics;
   }
 
-  getContainerMemoryUsage(id) {
-    return this.containerMemoryUsages.find((container) => container.id === id);
+  getOneContainerMetrics(id) {
+    return this.containerMetrics.find((container) => container.id === id);
   }
 
-  upsertContainerMemoryUsage({ id, memoryUsage }) {
-    const container = this.getContainerMemoryUsage(id);
+  upsertOneContainerMetrics({ id, metrics }) {
+    const container = this.getOneContainerMetrics(id);
     if (container) {
-      container.memoryUsage = memoryUsage;
+      container.metrics = { ...metrics };
     } else {
-      this.containerMemoryUsages.push({ id, memoryUsage });
+      this.containerMetrics.push({ id, metrics });
     }
   }
 
-  upsertContainerMemoryUsages(containerMemoryUsages) {
-    for (const container of containerMemoryUsages) {
-      this.upsertContainerMemoryUsage(container);
+  upsertAllContainerMetrics(containerMetrics) {
+    for (const container of containerMetrics) {
+      this.upsertOneContainerMetrics(container);
     }
   }
 }
