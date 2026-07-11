@@ -1,25 +1,33 @@
 import { useEffect, useRef } from 'react';
 import p5 from 'p5';
-import { Sketch } from './Sketch';
+import { getSketchFunc } from './Sketch';
 import './App.css';
+import { useMetrics } from './useMetrics';
 
 function App() {
-  const sketchRef = useRef(null);
+  const { metrics } = useMetrics();
 
+  const stateRef = useRef({ metrics });
+
+  // Keep the stateRef synchronized with metrics
   useEffect(() => {
-    const p5Instance = new p5(Sketch, sketchRef.current);
+    stateRef.current = { metrics };
+  }, [metrics]);
+
+  const containerRef = useRef(null);
+
+  // Create p5Instance connected to stateRef and attach container ref
+  useEffect(() => {
+    const p5Instance = new p5(getSketchFunc(stateRef), containerRef.current);
     return () => p5Instance.remove();
   }, []);
 
   return (
     <div className='page'>
-      <section>
-        <h1 className='header'>Oh yeah</h1>
+      <section className='header'>
+        <h1>The Metrics Stack</h1>
       </section>
-      <section className='content' ref={sketchRef}></section>
-      <section className='footer'>
-        <p>some text</p>
-      </section>
+      <section className='content' ref={containerRef}></section>
     </div>
   );
 }
