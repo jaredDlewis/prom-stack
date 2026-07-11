@@ -10,8 +10,8 @@ function transformMetrics(metrics) {
       id: m.id,
       [MEMORY_USAGE_TOTAL]: m.metrics[MEMORY_USAGE_TOTAL][0]['as_int'],
       [MEMORY_PERCENT]: m.metrics[MEMORY_PERCENT][0]['as_double'],
-    }
-  })
+    };
+  }).sort((a, b) => a[MEMORY_USAGE_TOTAL] - b[MEMORY_USAGE_TOTAL]);
 }
 
 export function useMetrics() {
@@ -26,14 +26,16 @@ export function useMetrics() {
       setTimeout(getAndSetMetrics, TIMEOUT_DELAY);
     } catch (error) {
       console.error('Error getting metrics: ', error);
+      setTimeout(getAndSetMetrics, TIMEOUT_DELAY);
     }
   };
 
   useEffect(() => {
     const timeoutId = setTimeout(getAndSetMetrics, TIMEOUT_DELAY);
-    return clearTimeout(timeoutId);
+    return () => clearTimeout(timeoutId);
   });
 
   const transformedMetrics = transformMetrics(metrics);
+  
   return { metrics: transformedMetrics };
 }

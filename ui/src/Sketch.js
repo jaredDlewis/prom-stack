@@ -31,7 +31,7 @@ export function getSketchFunc (stateRef) {
       p.ambientLight(255, 255, 255);
       placeGround();
       stateRef.current.metrics.forEach((container) => {
-        const proportion = container.metrics[MEMORY_PERCENT] / 100;
+        const proportion = container[MEMORY_PERCENT] / 100;
         placeBox(calcBoxWidth(proportion), calcBoxColor(proportion));
       })
     };
