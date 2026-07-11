@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 
 import { MEMORY_USAGE_TOTAL, MEMORY_PERCENT } from './constants';
 
-const TIMEOUT_DELAY = 2000;
+const TIMEOUT_DELAY = 500;
 
 function transformMetrics(metrics) {
   return metrics.map((m) => {
