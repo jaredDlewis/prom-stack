@@ -65,8 +65,7 @@ function getGrpcServer() {
         const containerMetrics = extractIdAndMetrics(call);
         metricsStore.upsertOneContainerMetrics(containerMetrics);
         console.log(
-          'Successfully set data from sibling container',
-          containerMetrics,
+          'Successfully set data from sibling container'
         );
       } catch (error) {
         console.log(`Didn't get sibling container metrics: `, error);
@@ -74,18 +73,20 @@ function getGrpcServer() {
       // try to get and store metrics from nested container(s)
       try {
         const nestedContainerResponse = await fetch(
-          `http://${NESTED_CONTAINER_NAME}:3000/metrics`,
+          `http://${NESTED_CONTAINER_NAME}:3000/api/metrics`,
         );
         const nestedContainerBody = await nestedContainerResponse.json();
         const nestedContainerMetrics = nestedContainerBody.data;
         metricsStore.upsertAllContainerMetrics(nestedContainerMetrics);
         console.log(
-          'Successfully set data from nested container:',
-          nestedContainerMetrics,
+          'Successfully set data from nested container'
         );
       } catch (error) {
         console.log("Didn't get nested container(s) metrics: ", error);
       }
+      fetch('http://localhost:3000/webhooks/metrics', {
+        method: 'POST'
+      })
       console.log(
         'Store after update:',
         metricsStore.getAllContainerMetrics(),

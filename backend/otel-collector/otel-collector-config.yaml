@@ -1,7 +1,7 @@
 receivers:
   docker_stats:
     endpoint: "unix:///var/run/docker.sock"
-    collection_interval: 2s
+    collection_interval: 0.5s
     initial_delay: 2s
     excluded_images:
       - metrics-aggregator

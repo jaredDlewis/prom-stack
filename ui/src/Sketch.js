@@ -98,6 +98,7 @@ export function getSketchFunc(stateRef) {
 
     const placeGround = () => {
       moveOriginToCenterOfGround();
+      // first create the left portion of ground. Then create the right portion of the ground
       p.ambientMaterial(GROUND_COLOR);
       p.box(p.width, GROUND_HEIGHT, p.width);
     };

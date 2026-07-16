@@ -6,9 +6,7 @@ import {
   MEMORY_USAGE_DISPLAY,
   MEMORY_USAGE_LIMIT,
 } from './constants';
-import { mockResponse } from '../mocks';
 
-const TIMEOUT_DELAY = 500;
 const memoryUnits = [
   'B',
   'KB',
@@ -58,27 +56,16 @@ function transformMetrics(metrics) {
 export function useMetrics() {
   const [metrics, setMetrics] = useState([]);
 
-  const getAndSetMetrics = async () => {
-    try {
-      // const response = await fetch('http://localhost:3000/metrics');
-      // const body = await response.json();
-      const body = mockResponse;
-      const rawMetricsData = body.data;
-      setMetrics(rawMetricsData);
-    } catch (error) {
-      console.warn('Error getting metrics: ', error);
-    }
-  };
-
   useEffect(() => {
-    let timeoutId = null;
-    function metricsLoop() {
-      getAndSetMetrics();
-      timeoutId = setTimeout(metricsLoop, TIMEOUT_DELAY);
-    }
-    metricsLoop();
-    return () => clearTimeout(timeoutId);
-  });
+    const eventSource = new EventSource(
+      'http://localhost:3000/api/metrics/stream',
+    );
+    eventSource.onmessage = (message) => {
+      console.log(JSON.parse(message.data))
+      setMetrics(JSON.parse(message.data));
+    };
+    return () => eventSource.close();
+  }, []);
 
   const transformedMetrics = transformMetrics(metrics);
 
